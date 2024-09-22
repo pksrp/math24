@@ -16,7 +16,7 @@ def generate_numbers():
 def handle_client(conn, addr, player_name, game_data):
     conn.sendall(f"Welcome {player_name}!".encode())  # Send welcome message to the player
     
-    # Ensure the numbers are sent properly after the welcome message
+    # Send the same numbers to both players
     numbers_str = ' '.join(map(str, game_data['numbers']))  # Convert numbers to string
     conn.sendall(numbers_str.encode())  # Send the problem (numbers) to the client
     
@@ -42,27 +42,11 @@ def start_game():
 
     players = {}
     game_data = {
-        'numbers': generate_numbers(),
+        'numbers': None,
         'winner': None
     }
 
-    # Accept the first player and send the problem immediately
-    conn, addr = server.accept()
-    conn.sendall("Enter your name: ".encode())  # Ask for the player's name
-    player_name = conn.recv(1024).decode()  # Receive the player's name
-    players[player_name] = conn
-    print(f"{player_name} connected from {addr}")
-    
-    # Send the welcome message
-    conn.sendall(f"Welcome {player_name}!".encode())  # Send welcome message
-    
-    # Send the problem after the welcome message
-    conn.sendall(f"{' '.join(map(str, game_data['numbers']))}".encode())  # Send the problem (numbers)
-    
-    # Handle the player in a new thread
-    threading.Thread(target=handle_client, args=(conn, addr, player_name, game_data)).start()
-
-    # Accept the second player if needed
+    # Accept two players
     while len(players) < 2:
         conn, addr = server.accept()
         conn.sendall("Enter your name: ".encode())  # Ask for the player's name
@@ -70,7 +54,11 @@ def start_game():
         players[player_name] = conn
         print(f"{player_name} connected from {addr}")
         
-        # Handle the second player in a new thread
+        # Generate numbers once when the first player connects
+        if game_data['numbers'] is None:
+            game_data['numbers'] = generate_numbers()
+
+        # Start a new thread for each player
         threading.Thread(target=handle_client, args=(conn, addr, player_name, game_data)).start()
 
     # Wait for a winner
