@@ -3,14 +3,16 @@ import threading
 import random
 from Database import update_score, init_db
 from MathOperations import check_solution
+from util import log_activity  # Assuming util has logging or utility functions
 
-# Initialize database
+# Initialize the database
 init_db()
 
 # Function to generate 4 random numbers
 def generate_numbers():
     return [random.randint(1, 10) for _ in range(4)]
 
+# Handling client connections
 def handle_client(conn, addr, player_name, game_data):
     conn.sendall(f"Welcome {player_name}!".encode())
     while True:
@@ -25,10 +27,14 @@ def handle_client(conn, addr, player_name, game_data):
         else:
             conn.sendall("Incorrect. Try again.".encode())
     
+    # Logging activity (example utility function)
+    log_activity(f"Player {player_name} from {addr} solved the puzzle!")
+
+# Start the server and game logic
 def start_game():
-    # Setup server socket
+    # Set up server socket
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('0.0.0.0', 5555))
+    server.bind(('0.0.0.0', 5555))  # Port can be configured in config.py
     server.listen(2)
     print("Server is running and waiting for connections...")
 
@@ -46,10 +52,11 @@ def start_game():
         print(f"{player_name} connected from {addr}")
         threading.Thread(target=handle_client, args=(conn, addr, player_name, game_data)).start()
 
-    # Wait until we have a winner
+    # Wait for the winner
     while not game_data['winner']:
         pass
 
+    # Announce winner to both players
     for player, conn in players.items():
         if player == game_data['winner']:
             conn.sendall("You are the winner!".encode())
