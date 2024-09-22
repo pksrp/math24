@@ -26,7 +26,7 @@ def connect_to_server():
     global client
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(('192.168.100.48', 5555))  # Ensure IP matches your server
+        client.connect(('192.168.1.7', 5555))  # Ensure IP matches your server
         name = name_entry.get()
         client.send(name.encode())  # Send player name to server
         

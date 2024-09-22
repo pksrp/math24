@@ -36,7 +36,7 @@ def handle_client(conn, addr, player_name, game_data):
 # Start the server and game logic
 def start_game():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('192.168.100.48', 5555))  # Ensure this IP matches your machine's IP
+    server.bind(('192.168.1.7', 5555))  # Ensure this IP matches your machine's IP
     server.listen(2)
     print("Server is running and waiting for connections...")
 
