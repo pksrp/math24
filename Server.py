@@ -34,7 +34,7 @@ def handle_client(conn, addr, player_name, game_data):
 def start_game():
     # Set up server socket
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('0.0.0.0', 5555))  # Port can be configured in config.py
+    server.bind(('192.168.100.48', 5555))  # Replace 0.0.0.0 with your machine's IP
     server.listen(2)
     print("Server is running and waiting for connections...")
 

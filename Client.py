@@ -18,12 +18,16 @@ def receive_problem():
 
 def connect_to_server():
     global client
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(('127.0.0.1', 5555))
-    name = name_entry.get()
-    client.send(name.encode())
-    receive_problem()
-
+    try:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect(('192.168.100.48', 5555))  # Ensure the IP and port are correct
+        name = name_entry.get()
+        client.send(name.encode())
+        receive_problem()
+    except Exception as e:
+        print(f"Error connecting to server: {e}")
+        messagebox.showerror("Connection Error", f"Failed to connect to server: {e}")
+        
 # GUI using Tkinter
 root = tk.Tk()
 root.title("Game 24 Client")

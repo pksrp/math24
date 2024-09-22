@@ -5,6 +5,9 @@
 """
 
 import random
+import tkinter as tk
+from tkinter import messagebox
+import datetime
 
 from itertools import (
     permutations, product
@@ -106,3 +109,27 @@ def infix2postfix(infix_expr):
         postfix_list.append(op_stack.pop())
 
     return ' '.join(postfix_list)
+
+
+
+
+def log_activity(message):
+    """Log game activity to a file with timestamps."""
+    with open("game_activity.log", "a") as log_file:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_file.write(f"[{timestamp}] {message}\n")
+        
+
+
+def show_help():
+    """Display a help message with instructions for playing the game."""
+    help_message = (
+        "Game 24 Help:\n\n"
+        "- The goal is to make the number 24 using the 4 given numbers.\n"
+        "- You can use addition (+), subtraction (-), multiplication (*), and division (/).\n"
+        "- You can also use parentheses to group operations.\n"
+        "- Example: (8 * 3) - (4 / 2)\n\n"
+        "Enter your solution and click 'Submit'.\n"
+        "The first player to get the correct answer wins!"
+    )
+    messagebox.showinfo("Help", help_message)
