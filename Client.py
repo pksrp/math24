@@ -2,33 +2,41 @@ import socket
 import tkinter as tk
 from tkinter import messagebox
 from Music import play_music
-from util import show_help  # Utility for showing in-game help
 
 client = None
 
 def send_solution():
     solution = solution_entry.get()
     client.send(solution.encode())
-    result = client.recv(1024).decode()
+    result = client.recv(1024).decode()  # Receive the result (Correct/Incorrect) from the server
     messagebox.showinfo("Result", result)
 
-def receive_problem():
-    problem = client.recv(1024).decode()
-    problem_label.config(text=problem)
+def receive_welcome_and_problem():
+    """Receives the welcome message and problem (numbers) from the server and displays it in the GUI."""
+    try:
+        welcome_msg = client.recv(1024).decode()  # Receive the welcome message
+        messagebox.showinfo("Welcome", welcome_msg)  # Display the welcome message
+
+        problem = client.recv(1024).decode()  # Now receive the numbers from the server
+        problem_label.config(text=f"Your numbers are: {problem}")  # Update the problem label
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to receive problem: {e}")
 
 def connect_to_server():
     global client
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(('192.168.100.48', 5555))  # Ensure the IP and port are correct
+        client.connect(('192.168.100.48', 5555))  # Ensure IP matches your server
         name = name_entry.get()
-        client.send(name.encode())
-        receive_problem()
+        client.send(name.encode())  # Send player name to server
+        
+        # After connecting, immediately receive the welcome message and problem (numbers) from the server
+        receive_welcome_and_problem()  # Now, wait to receive both the welcome and the problem
     except Exception as e:
         print(f"Error connecting to server: {e}")
         messagebox.showerror("Connection Error", f"Failed to connect to server: {e}")
-        
-# GUI using Tkinter
+
+# GUI setup
 root = tk.Tk()
 root.title("Game 24 Client")
 
@@ -43,7 +51,7 @@ connect_button = tk.Button(root, text="Connect", command=connect_to_server)
 connect_button.pack()
 
 # Problem display
-problem_label = tk.Label(root, text="Waiting for the problem...")
+problem_label = tk.Label(root, text="Your numbers are:")
 problem_label.pack()
 
 # Solution entry
@@ -60,8 +68,8 @@ submit_button.pack()
 music_button = tk.Button(root, text="Play Music", command=play_music)
 music_button.pack()
 
-# Help button (assuming show_help is defined in util)
-help_button = tk.Button(root, text="Help", command=show_help)
+# Help button
+help_button = tk.Button(root, text="Help", command=lambda: messagebox.showinfo("Help", "Enter your solution to reach 24"))
 help_button.pack()
 
 root.mainloop()
