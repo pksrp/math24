@@ -1,29 +1,21 @@
 import sqlite3
 
-# สร้างและเชื่อมต่อกับฐานข้อมูล
-conn = sqlite3.connect('game_stats.db')
-cursor = conn.cursor()
-
-# สร้างตารางสำหรับผู้ใช้
-cursor.execute('''CREATE TABLE IF NOT EXISTS users
-                  (username TEXT PRIMARY KEY, password TEXT, score INTEGER DEFAULT 0)''')
-
-def register_user(username, password):
-    try:
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-        conn.commit()
-    except sqlite3.IntegrityError:
-        return False
-    return True
-
-def login_user(username, password):
-    cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-    return cursor.fetchone() is not None
-
-def update_score(username, score):
-    cursor.execute("UPDATE users SET score = score + ? WHERE username = ?", (score, username))
+def init_db():
+    conn = sqlite3.connect('game24.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS scores 
+                 (player TEXT, score INTEGER)''')
     conn.commit()
+    conn.close()
 
-# ปิดการเชื่อมต่อเมื่อเสร็จสิ้น
-def close_connection():
+def update_score(player, score):
+    conn = sqlite3.connect('game24.db')
+    c = conn.cursor()
+    c.execute("SELECT score FROM scores WHERE player=?", (player,))
+    result = c.fetchone()
+    if result:
+        c.execute("UPDATE scores SET score = score + ? WHERE player = ?", (score, player))
+    else:
+        c.execute("INSERT INTO scores (player, score) VALUES (?, ?)", (player, score))
+    conn.commit()
     conn.close()

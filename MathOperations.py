@@ -1,14 +1,12 @@
-import math
-
-def calculate(expression):
+def check_solution(numbers, solution):
     try:
-        result = eval(expression, {"__builtins__": None}, math.__dict__)
-        return result
+        # Replace 'numbers' in solution string
+        for i in range(4):
+            solution = solution.replace(f"n{i+1}", str(numbers[i]))
+        
+        # Evaluate the solution safely
+        result = eval(solution)
+        return result == 24
     except Exception as e:
-        return str(e)
-
-# ตัวอย่างการทดสอบ
-if __name__ == "__main__":
-    print(calculate("math.log(100)"))
-    print(calculate("math.sqrt(16)"))
-    print(calculate("5 * 10"))
+        print(f"Error in solution: {e}")
+        return False
