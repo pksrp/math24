@@ -11,7 +11,19 @@ def send_solution():
     result = client.recv(1024).decode()  # Receive the result (Correct/Incorrect) from the server
     messagebox.showinfo("Result", result)
 
-def receive_welcome_and_problem():
+    # After game ends, receive the play again prompt
+    play_again_prompt = client.recv(1024).decode()
+    answer = messagebox.askquestion("Game Over", play_again_prompt)
+    
+    if answer == 'yes':
+        client.send("yes".encode())
+        receive_problem()  # Start a new game session
+    else:
+        client.send("no".encode())
+        messagebox.showinfo("Exit", "Thanks for playing!")
+        root.quit()  # Close the GUI
+
+def receive_problem():
     """Receives the welcome message and problem (numbers) from the server and displays it in the GUI."""
     try:
         welcome_msg = client.recv(1024).decode()  # Receive the welcome message
@@ -31,7 +43,7 @@ def connect_to_server():
         client.send(name.encode())  # Send player name to server
         
         # After connecting, immediately receive the welcome message and problem (numbers) from the server
-        receive_welcome_and_problem()  # Now, wait to receive both the welcome and the problem
+        receive_problem()  # Now, wait to receive both the welcome and the problem
     except Exception as e:
         print(f"Error connecting to server: {e}")
         messagebox.showerror("Connection Error", f"Failed to connect to server: {e}")

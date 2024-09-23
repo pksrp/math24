@@ -33,33 +33,9 @@ def handle_client(conn, addr, player_name, game_data):
 
     log_activity(f"Player {player_name} from {addr} solved the puzzle!")
 
-# Start the server and game logic
-def start_game():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('192.168.100.48', 5555))  # Ensure this IP matches your machine's IP
-    server.listen(2)
-    print("Server is running and waiting for connections...")
-
-    players = {}
-    game_data = {
-        'numbers': None,
-        'winner': None
-    }
-
-    # Accept two players
-    while len(players) < 2:
-        conn, addr = server.accept()
-        conn.sendall("Enter your name: ".encode())  # Ask for the player's name
-        player_name = conn.recv(1024).decode()  # Receive the player's name
-        players[player_name] = conn
-        print(f"{player_name} connected from {addr}")
-        
-        # Generate numbers once when the first player connects
-        if game_data['numbers'] is None:
-            game_data['numbers'] = generate_numbers()
-
-        # Start a new thread for each player
-        threading.Thread(target=handle_client, args=(conn, addr, player_name, game_data)).start()
+def start_game(players, game_data):
+    game_data['numbers'] = generate_numbers()
+    game_data['winner'] = None
 
     # Wait for a winner
     while not game_data['winner']:
@@ -72,7 +48,44 @@ def start_game():
         else:
             conn.sendall("You lost. Better luck next time.".encode())
 
-    server.close()
+    # Ask both players if they want to play again
+    for player, conn in players.items():
+        conn.sendall("Play again? (yes/no)".encode())
+    
+    play_again = []
+    for player, conn in players.items():
+        response = conn.recv(1024).decode()
+        play_again.append(response.strip().lower())
+
+    if "yes" in play_again:
+        # Start a new game session
+        start_game(players, game_data)
+    else:
+        for conn in players.values():
+            conn.sendall("Thanks for playing! Exiting...".encode())
+        print("Game over. Exiting...")
+        for conn in players.values():
+            conn.close()
+
+def accept_connections(server):
+    players = {}
+    game_data = {'numbers': None, 'winner': None}
+
+    # Accept two players
+    while len(players) < 2:
+        conn, addr = server.accept()
+        conn.sendall("Enter your name: ".encode())  # Ask for the player's name
+        player_name = conn.recv(1024).decode()  # Receive the player's name
+        players[player_name] = conn
+        print(f"{player_name} connected from {addr}")
+    
+    # Start the game
+    start_game(players, game_data)
 
 if __name__ == "__main__":
-    start_game()
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(('192.168.100.48', 5555))  # Ensure this IP matches your machine's IP
+    server.listen(2)
+    print("Server is running and waiting for connections...")
+
+    accept_connections(server)
