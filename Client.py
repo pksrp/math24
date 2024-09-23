@@ -3,8 +3,10 @@ import socket
 import tkinter as tk
 from tkinter import messagebox
 from Music import play_music
+import time
 
 client = None
+max_retries = 3  # Maximum number of retries for connection
 
 def show_result_and_options(result):
     """Show result (win/lose) and ask to play again or quit."""
@@ -36,21 +38,29 @@ def reset_game():
 
 def send_solution():
     solution = solution_entry.get()
-    client.send(solution.encode())
-    result = client.recv(1024).decode()  # Receive the result (Correct/Incorrect) from the server
-    show_result_and_options(result)
+    try:
+        client.send(solution.encode())
+        result = client.recv(1024).decode()  # Receive the result (Correct/Incorrect) from the server
+        show_result_and_options(result)
+    except socket.timeout:
+        messagebox.showerror("Timeout", "Connection timed out while sending solution. Please try again.")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to send solution: {e}")
 
     # After game ends, receive the play again prompt
-    play_again_prompt = client.recv(1024).decode()
-    answer = messagebox.askquestion("Game Over", play_again_prompt)
-    
-    if answer == 'yes':
-        client.send("yes".encode())
-        receive_problem()  # Start a new game session
-    else:
-        client.send("no".encode())
-        messagebox.showinfo("Exit", "Thanks for playing!")
-        root.quit()  # Close the GUI
+    try:
+        play_again_prompt = client.recv(1024).decode()
+        if play_again_prompt == 'yes':
+            client.send("yes".encode())
+            receive_problem()  # Start a new game session
+        else:
+            client.send("no".encode())
+            messagebox.showinfo("Exit", "Thanks for playing!")
+            root.quit()  # Close the GUI
+    except socket.timeout:
+        messagebox.showerror("Timeout", "Connection timed out while receiving play again prompt. Please try again.")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to receive play again prompt: {e}")
 
 def receive_problem():
     """Receives the welcome message and problem (numbers) from the server and displays it in the GUI."""
@@ -60,26 +70,41 @@ def receive_problem():
 
         problem = client.recv(1024).decode()  # Now receive the numbers from the server
         problem_label.config(text=f"Your numbers are: {problem}")  # Update the problem label
+    except socket.timeout:
+        messagebox.showerror("Timeout", "Connection timed out while receiving problem. Please try again.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to receive problem: {e}")
 
 def connect_to_server():
     global client
-    try:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(('192.168.1.7', 5555))  # Ensure IP matches your server
-        name = name_entry.get()
-        client.send(name.encode())  # Send player name to server
-        
-        # After connecting, immediately receive the welcome message and problem (numbers) from the server
-        receive_problem()  # Now, wait to receive both the welcome and the problem
-    except Exception as e:
-        print(f"Error connecting to server: {e}")
-        messagebox.showerror("Connection Error", f"Failed to connect to server: {e}")
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.settimeout(30)  # Set longer timeout for the connection
+            client.connect(('0.0.0.0', 5555))  # Ensure IP matches your server
+            name = name_entry.get()
+            client.send(name.encode())  # Send player name to server
+            
+            # After connecting, immediately receive the welcome message and problem (numbers) from the server
+            receive_problem()  # Now, wait to receive both the welcome and the problem
+            break
+        except socket.timeout:
+            retry_count += 1
+            messagebox.showwarning("Timeout", f"Connection timed out. Retrying {retry_count}/{max_retries}...")
+            time.sleep(2)  # Wait for 2 seconds before retrying
+        except Exception as e:
+            messagebox.showerror("Connection Error", f"Failed to connect to server: {e}")
+            break
+    else:
+        messagebox.showerror("Error", "Failed to connect after multiple attempts. Please try again later.")
 
 # GUI setup
 root = tk.Tk()
 root.title("Game 24 Client")
+
+# Play background music
+play_music()
 
 # Player name input
 name_label = tk.Label(root, text="Enter your name:")

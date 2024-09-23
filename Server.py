@@ -1,3 +1,4 @@
+
 import socket
 import threading
 import random
@@ -16,12 +17,21 @@ def generate_numbers():
 def handle_client(conn, addr, player_name, game_data):
     conn.sendall(f"Welcome {player_name}!".encode())  # Send welcome message to the player
     
-    # Send the same numbers to both players
+    # Send the numbers to the player (even in single player mode)
     numbers_str = ' '.join(map(str, game_data['numbers']))  # Convert numbers to string
-    conn.sendall(numbers_str.encode())  # Send the problem (numbers) to the client
-    
+    try:
+        conn.sendall(numbers_str.encode())  # Send the problem (numbers) to the client
+    except Exception as e:
+        print(f"Failed to send problem: {e}")
+        conn.close()
+        return
+
     while True:
-        solution = conn.recv(1024).decode()  # Receive the player's solution
+        try:
+            solution = conn.recv(1024).decode()  # Receive the player's solution
+        except socket.timeout:
+            conn.sendall("Connection timed out. Please try again.".encode())
+            break
         
         if check_solution(game_data['numbers'], solution):  # Check if the solution is correct
             conn.sendall("Correct! You won!".encode())
@@ -37,24 +47,25 @@ def start_game(players, game_data):
     game_data['numbers'] = generate_numbers()
     game_data['winner'] = None
 
-    # Wait for a winner
-    while not game_data['winner']:
-        pass
+    # Wait for a winner (no need to wait in single player mode)
+    if len(players) > 1:
+        while not game_data['winner']:
+            pass
+    else:
+        # Instead of 'player1', use the actual player's name
+        player_name = list(players.keys())[0]
+        handle_client(players[player_name], None, player_name, game_data)
 
-    # Announce the winner to both players
-    for player, conn in players.items():
-        if player == game_data['winner']:
-            conn.sendall("You are the winner!".encode())
-        else:
-            conn.sendall("You lost. Better luck next time.".encode())
-
-    # Ask both players if they want to play again
+    # Ask players if they want to play again
     for player, conn in players.items():
         conn.sendall("Play again? (yes/no)".encode())
     
     play_again = []
     for player, conn in players.items():
-        response = conn.recv(1024).decode()
+        try:
+            response = conn.recv(1024).decode()
+        except socket.timeout:
+            response = "no"  # Default to "no" if player doesn't respond in time
         play_again.append(response.strip().lower())
 
     if "yes" in play_again:
@@ -71,20 +82,25 @@ def accept_connections(server):
     players = {}
     game_data = {'numbers': None, 'winner': None}
 
-    # Accept two players
-    while len(players) < 2:
-        conn, addr = server.accept()
-        conn.sendall("Enter your name: ".encode())  # Ask for the player's name
+    # Accept a single player or two players
+    conn, addr = server.accept()
+    conn.settimeout(20)  # Set a timeout for the connection
+    conn.sendall("Enter your name: ".encode())  # Ask for the player's name
+    try:
         player_name = conn.recv(1024).decode()  # Receive the player's name
-        players[player_name] = conn
-        print(f"{player_name} connected from {addr}")
+    except socket.timeout:
+        print(f"Connection from {addr} timed out. Disconnecting.")
+        conn.close()
+        return
+    players[player_name] = conn
+    print(f"{player_name} connected from {addr}")
     
-    # Start the game
+    # Start the game for single player mode
     start_game(players, game_data)
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('192.168.100.48', 5555))  # Ensure this IP matches your machine's IP
+    server.bind(('0.0.0.0', 5555))  # This will allow connections from all network interfaces
     server.listen(2)
     print("Server is running and waiting for connections...")
 
