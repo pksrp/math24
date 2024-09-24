@@ -8,6 +8,33 @@ from util import show_help  # Import the show_help function from the other file
 client = None
 max_retries = 3  # Maximum number of retries for connection
 
+def append_to_solution(value):
+    """Append a value to the solution entry."""
+    current_solution = solution_entry.get()
+    # Check if the current solution is valid before appending
+    if value in ['+', '-', '*', '/'] and (current_solution == '' or current_solution[-1] in ['+', '-', '*', '/']):
+        messagebox.showerror("Invalid Input", "You cannot add another operator.")
+        solution_entry.delete(0, tk.END)  # Clear on invalid operator
+        return
+    
+    solution_entry.delete(0, tk.END)
+    solution_entry.insert(0, current_solution + str(value))
+
+def calculate_solution():
+    """Calculate the solution and check if it equals 24."""
+    solution = solution_entry.get()
+    try:
+        # Evaluate the expression and check if it equals 24
+        result = eval(solution)  # Use with caution; ensure input is sanitized
+        if result == 24:
+            send_solution(solution)  # Send to server
+        else:
+            messagebox.showerror("Invalid Solution", "The solution does not equal 24.")
+            solution_entry.delete(0, tk.END)  # Clear on invalid solution
+    except Exception as e:
+        messagebox.showerror("Error", f"Invalid calculation: {e}")
+        solution_entry.delete(0, tk.END)  # Clear on error
+
 def show_result_and_options(result):
     """Show result (win/lose) and ask to play again or quit."""
     result_window = tk.Toplevel(root)
@@ -158,6 +185,28 @@ solution_label = tk.Label(root, text="Enter your solution:")
 solution_label.pack()
 solution_entry = tk.Entry(root)
 solution_entry.pack()
+
+# Create calculator buttons
+button_frame = tk.Frame(root)
+button_frame.pack()
+
+buttons = [
+    '1', '2', '3',
+    '4', '5', '6',
+    '7', '8', '9',
+    '+', '-', '*', '/','(',')',
+    'C', '='
+]
+
+for button in buttons:
+    if button == '=':
+        btn = tk.Button(button_frame, text=button, command=calculate_solution)
+    elif button == 'C':
+        btn = tk.Button(button_frame, text=button, command=lambda: solution_entry.delete(0, tk.END))
+    else:
+        btn = tk.Button(button_frame, text=button, command=lambda b=button: append_to_solution(b))
+    
+    btn.grid(row=buttons.index(button) // 3, column=buttons.index(button) % 3)
 
 # Submit button
 submit_button = tk.Button(root, text="Submit Solution", command=send_solution)
