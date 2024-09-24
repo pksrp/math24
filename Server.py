@@ -7,6 +7,38 @@ from MathOperations import check_solution
 from util import log_activity
 from Database import update_score, init_db
 
+from MathOperations import strict_validate_solution  # Import the correct function
+
+def handle_client(conn, addr, player_name, game_data):
+    conn.sendall(f"Welcome {player_name}!".encode())  # Send welcome message to the player
+    
+    # Send the numbers to the player
+    numbers_str = ' '.join(map(str, game_data['numbers']))  # Convert numbers to string
+    try:
+        conn.sendall(numbers_str.encode())  # Send the problem (numbers) to the client
+    except Exception as e:
+        print(f"Failed to send problem: {e}")
+        conn.close()
+        return
+
+    while True:
+        try:
+            solution = conn.recv(1024).decode()  # Receive the player's solution
+            print(f"Received solution from {player_name}: {solution}")  # Debugging
+        except socket.timeout:
+            conn.sendall("Connection timed out. Please try again.".encode())
+            break
+        
+        # Use strict validation for the solution
+        if strict_validate_solution(solution, game_data['numbers']):  # Check if the solution is correct
+            conn.sendall("Correct! You won!".encode())
+            game_data['winner'] = player_name
+            break
+        else:
+            conn.sendall("Incorrect. Try again.".encode())
+
+    conn.close()  # Close connection after game ends
+
 # Initialize the database
 init_db()
 
