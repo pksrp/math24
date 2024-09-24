@@ -1,4 +1,3 @@
-
 import socket
 import tkinter as tk
 from tkinter import messagebox
@@ -40,6 +39,7 @@ def send_solution():
     solution = solution_entry.get()
     try:
         client.send(solution.encode())
+        print(f"Solution sent: {solution}")  # Debugging
         result = client.recv(1024).decode()  # Receive the result (Correct/Incorrect) from the server
         show_result_and_options(result)
     except socket.timeout:
@@ -50,6 +50,7 @@ def send_solution():
     # After game ends, receive the play again prompt
     try:
         play_again_prompt = client.recv(1024).decode()
+        print(f"Play again response: {play_again_prompt}")  # Debugging
         if play_again_prompt == 'yes':
             client.send("yes".encode())
             receive_problem()  # Start a new game session
@@ -70,6 +71,7 @@ def receive_problem():
 
         problem = client.recv(1024).decode()  # Now receive the numbers from the server
         problem_label.config(text=f"Your numbers are: {problem}")  # Update the problem label
+        print(f"Received problem: {problem}")  # Debugging
     except socket.timeout:
         messagebox.showerror("Timeout", "Connection timed out while receiving problem. Please try again.")
     except Exception as e:
@@ -85,6 +87,7 @@ def connect_to_server():
             client.connect(('127.0.0.1', 5555))  # Ensure IP matches your server
             name = name_entry.get()
             client.send(name.encode())  # Send player name to server
+            print(f"Player name sent: {name}")  # Debugging
             
             # After connecting, immediately receive the welcome message and problem (numbers) from the server
             receive_problem()  # Now, wait to receive both the welcome and the problem

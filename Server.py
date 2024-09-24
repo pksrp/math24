@@ -1,4 +1,3 @@
-
 import socket
 import threading
 import random
@@ -29,6 +28,7 @@ def handle_client(conn, addr, player_name, game_data):
     while True:
         try:
             solution = conn.recv(1024).decode()  # Receive the player's solution
+            print(f"Received solution from {player_name}: {solution}")  # Debugging
         except socket.timeout:
             conn.sendall("Connection timed out. Please try again.".encode())
             break
@@ -42,6 +42,7 @@ def handle_client(conn, addr, player_name, game_data):
             conn.sendall("Incorrect. Try again.".encode())
 
     log_activity(f"Player {player_name} from {addr} solved the puzzle!")
+    conn.close()  # Close connection after game ends
 
 def start_game(players, game_data):
     game_data['numbers'] = generate_numbers()
@@ -56,52 +57,34 @@ def start_game(players, game_data):
         player_name = list(players.keys())[0]
         handle_client(players[player_name], None, player_name, game_data)
 
-    # Ask players if they want to play again
-    for player, conn in players.items():
-        conn.sendall("Play again? (yes/no)".encode())
-    
-    play_again = []
-    for player, conn in players.items():
-        try:
-            response = conn.recv(1024).decode()
-        except socket.timeout:
-            response = "no"  # Default to "no" if player doesn't respond in time
-        play_again.append(response.strip().lower())
-
-    if "yes" in play_again:
-        # Start a new game session
-        start_game(players, game_data)
-    elif "no" in play_again:
-        for conn in players.values():
-            conn.sendall("Thanks for playing! Exiting...".encode())
-        print("Game over. Exiting...")
-        for conn in players.values():
-            conn.close()
-
 def accept_connections(server):
-    players = {}
+    while True:
+        conn, addr = server.accept()  # Accept new connection
+        conn.settimeout(30)  # Set a timeout for the connection
+        
+        threading.Thread(target=client_thread, args=(conn, addr)).start()  # Start a new thread for each client
+
+def client_thread(conn, addr):
     game_data = {'numbers': None, 'winner': None}
 
-    # Accept a single player or two players
-    conn, addr = server.accept()
-    conn.settimeout(30)  # Set a timeout for the connection
     conn.sendall("Enter your name: ".encode())  # Ask for the player's name
     try:
         player_name = conn.recv(1024).decode()  # Receive the player's name
+        print(f"Player {player_name} connected from {addr}")  # Debugging
     except socket.timeout:
         print(f"Connection from {addr} timed out. Disconnecting.")
         conn.close()
         return
-    players[player_name] = conn
-    print(f"{player_name} connected from {addr}")
-    
+
+    players = {player_name: conn}
+
     # Start the game for single player mode
     start_game(players, game_data)
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('127.0.0.1', 5555))  # This will allow connections from all network interfaces
-    server.listen(2)
+    server.bind(('0.0.0.0', 5555))  # This will allow connections from all network interfaces
+    server.listen(5)  # Listen for up to 5 connections
     print("Server is running and waiting for connections...")
 
     accept_connections(server)
