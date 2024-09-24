@@ -109,6 +109,28 @@ def connect_to_server():
             break
     else:
         messagebox.showerror("Error", "Failed to connect after multiple attempts. Please try again later.")
+            
+def show_score_history():
+    """Request and display the player's score history from the server."""
+    
+    if client is None:  # Check if the client is connected
+        messagebox.showerror("Connection Error", "You are not connected to the server. Please connect first.")
+        return
+    
+    try:
+        client.send("get_score_history".encode())  # Send a request to get the score history
+        score_history = client.recv(4096).decode()  # Receive the score history (ensure the buffer size is large enough)
+        score_window = tk.Toplevel(root)
+        score_window.title("Score History")
+        
+        history_label = tk.Label(score_window, text="Score History:")
+        history_label.pack()
+        
+        score_text = tk.Text(score_window, height=10, width=50)
+        score_text.insert(tk.END, score_history)
+        score_text.pack()
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to retrieve score history: {e}")
 
 # GUI setup
 root = tk.Tk()
@@ -144,6 +166,10 @@ submit_button.pack()
 # Help button
 help_button = tk.Button(root, text="Help", command=show_help)  # Add the Help button
 help_button.pack()
+
+# Score History button
+score_history_button = tk.Button(root, text="Score History", command=show_score_history)
+score_history_button.pack()
 
 # Start the GUI main loop
 root.mainloop()

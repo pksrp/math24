@@ -1,6 +1,8 @@
 import socket
 import threading
 import random
+import sqlite3
+
 from MathOperations import check_solution
 from util import log_activity
 from Database import update_score, init_db
@@ -8,18 +10,23 @@ from Database import update_score, init_db
 # Initialize the database
 init_db()
 
+def get_score_history():
+    """Retrieve the score history of a specific player from the database."""
+    conn = sqlite3.connect('game24.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM scores",)
+    result = c.fetchall()
+    conn.close()
+    return result
+
 # Function to generate 4 random numbers
 def generate_numbers():
     return [random.randint(1, 10) for _ in range(4)]
 
 # Handling client connections
 def handle_client(conn, addr, player_name, game_data):
-    # # Step 1: Send the welcome message separately
-    # welcome_message = f"Welcome {player_name}!"
-    # conn.sendall(welcome_message.encode())  # Send welcome message
-
-    # Step 2: After a short delay, send the numbers in a separate message
-    numbers_str = ' '.join(map(str, game_data['numbers']))  # Convert numbers to string
+    # Send welcome message and problem
+    numbers_str = ' '.join(map(str, game_data['numbers']))
     try:
         conn.sendall(numbers_str.encode())
     except Exception as e:
@@ -29,23 +36,35 @@ def handle_client(conn, addr, player_name, game_data):
 
     while True:
         try:
-            solution = conn.recv(1024).decode()  # Receive the player's solution
-            print(f"Received solution from {player_name}: {solution}")  # Debugging
+            message = conn.recv(1024).decode()
+            if message == "get_score_history":
+                score_history = get_score_history()
+                if score_history:
+                    history_str = "\n".join([f"Player: {player}, Score: {score}" for player, score in score_history])
+                else:
+                    history_str = "No score history available."
+                conn.sendall(history_str.encode())
+                continue
+            
+            solution = message  # The message could also be the player's solution
+            print(f"Received solution from {player_name}: {solution}")
+            
+            if check_solution(game_data['numbers'], solution):  # Check if solution is correct
+                conn.sendall("Correct! You won!".encode())
+                update_score(player_name, 1)
+                game_data['winner'] = player_name
+                break
+            else:
+                conn.sendall("Incorrect. Try again.".encode())
+                break
         except socket.timeout:
             conn.sendall("Connection timed out. Please try again.".encode())
             break
-        
-        if check_solution(game_data['numbers'], solution):  # Check if the solution is correct
-            conn.sendall("Correct! You won!".encode())
-            update_score(player_name, 1)
-            game_data['winner'] = player_name
+        except Exception as e:
+            print(f"Error handling client: {e}")
+            conn.close()
             break
-        else:
-            conn.sendall("Incorrect. Try again.".encode())
-            break
-
-    log_activity(f"Player {player_name} from {addr}")
-    conn.close()  # Close connection after game ends
+    conn.close()
 
 def start_game(players, game_data):
     game_data['numbers'] = generate_numbers()
