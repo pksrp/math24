@@ -71,7 +71,7 @@ def start_game(players, game_data):
     if "yes" in play_again:
         # Start a new game session
         start_game(players, game_data)
-    else:
+    elif "no" in play_again:
         for conn in players.values():
             conn.sendall("Thanks for playing! Exiting...".encode())
         print("Game over. Exiting...")
@@ -84,7 +84,7 @@ def accept_connections(server):
 
     # Accept a single player or two players
     conn, addr = server.accept()
-    conn.settimeout(20)  # Set a timeout for the connection
+    conn.settimeout(30)  # Set a timeout for the connection
     conn.sendall("Enter your name: ".encode())  # Ask for the player's name
     try:
         player_name = conn.recv(1024).decode()  # Receive the player's name
@@ -100,7 +100,7 @@ def accept_connections(server):
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('0.0.0.0', 5555))  # This will allow connections from all network interfaces
+    server.bind(('127.0.0.1', 5555))  # This will allow connections from all network interfaces
     server.listen(2)
     print("Server is running and waiting for connections...")
 
