@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from Music import play_music
 import time
+from util import show_help  # Import the show_help function from the other file
 
 client = None
 max_retries = 3  # Maximum number of retries for connection
@@ -37,6 +38,11 @@ def reset_game():
 
 def send_solution():
     solution = solution_entry.get()
+    
+    if not solution:  # Check if the solution is empty
+        messagebox.showwarning("Invalid Input", "Solution cannot be empty. Please try again.")
+        return
+    
     try:
         client.send(solution.encode())
         print(f"Solution sent: {solution}")  # Debugging
@@ -54,7 +60,7 @@ def send_solution():
         if play_again_prompt == 'yes':
             client.send("yes".encode())
             receive_problem()  # Start a new game session
-        else:
+        elif play_again_prompt == 'no':
             client.send("no".encode())
             messagebox.showinfo("Exit", "Thanks for playing!")
             root.quit()  # Close the GUI
@@ -91,6 +97,8 @@ def connect_to_server():
             
             # After connecting, immediately receive the welcome message and problem (numbers) from the server
             receive_problem()  # Now, wait to receive both the welcome and the problem
+            
+            connect_button.pack_forget()  # Hide the "Connect" button after successful connection
             break
         except socket.timeout:
             retry_count += 1
@@ -132,6 +140,10 @@ solution_entry.pack()
 # Submit button
 submit_button = tk.Button(root, text="Submit Solution", command=send_solution)
 submit_button.pack()
+
+# Help button
+help_button = tk.Button(root, text="Help", command=show_help)  # Add the Help button
+help_button.pack()
 
 # Start the GUI main loop
 root.mainloop()

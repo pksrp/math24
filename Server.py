@@ -14,12 +14,14 @@ def generate_numbers():
 
 # Handling client connections
 def handle_client(conn, addr, player_name, game_data):
-    conn.sendall(f"Welcome {player_name}!".encode())  # Send welcome message to the player
-    
-    # Send the numbers to the player (even in single player mode)
+    # # Step 1: Send the welcome message separately
+    # welcome_message = f"Welcome {player_name}!"
+    # conn.sendall(welcome_message.encode())  # Send welcome message
+
+    # Step 2: After a short delay, send the numbers in a separate message
     numbers_str = ' '.join(map(str, game_data['numbers']))  # Convert numbers to string
     try:
-        conn.sendall(numbers_str.encode())  # Send the problem (numbers) to the client
+        conn.sendall(numbers_str.encode())
     except Exception as e:
         print(f"Failed to send problem: {e}")
         conn.close()
@@ -40,8 +42,9 @@ def handle_client(conn, addr, player_name, game_data):
             break
         else:
             conn.sendall("Incorrect. Try again.".encode())
+            break
 
-    log_activity(f"Player {player_name} from {addr} solved the puzzle!")
+    log_activity(f"Player {player_name} from {addr}")
     conn.close()  # Close connection after game ends
 
 def start_game(players, game_data):
@@ -67,7 +70,7 @@ def accept_connections(server):
 def client_thread(conn, addr):
     game_data = {'numbers': None, 'winner': None}
 
-    conn.sendall("Enter your name: ".encode())  # Ask for the player's name
+    conn.sendall("game start".encode())  # Ask for the player's name
     try:
         player_name = conn.recv(1024).decode()  # Receive the player's name
         print(f"Player {player_name} connected from {addr}")  # Debugging
@@ -83,7 +86,7 @@ def client_thread(conn, addr):
 
 if __name__ == "__main__":
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('0.0.0.0', 5555))  # This will allow connections from all network interfaces
+    server.bind(('127.0.0.1', 5555))  # This will allow connections from all network interfaces
     server.listen(5)  # Listen for up to 5 connections
     print("Server is running and waiting for connections...")
 
