@@ -2,6 +2,7 @@ import socket
 import threading
 import random
 import sqlite3
+import itertools
 
 from MathOperations import check_solution
 from util import log_activity
@@ -51,9 +52,38 @@ def get_score_history():
     conn.close()
     return result
 
-# Function to generate 4 random numbers
+# Function to generate 4 random numbers and ensure they have a valid solution
 def generate_numbers():
-    return [random.randint(1, 10) for _ in range(4)]
+    while True:
+        numbers = [random.randint(1, 10) for _ in range(4)]
+        if strict_validate_solution(numbers):  # Check if the numbers have a solution
+            return numbers
+
+# Function to check if the solution is valid
+def strict_validate_solution(numbers):
+    target = 24
+    operators = ['+', '-', '*', '/']
+    
+    # Generate all permutations of the numbers
+    for nums in itertools.permutations(numbers):
+        # Generate all possible combinations of operators
+        for ops in itertools.product(operators, repeat=3):
+            # Try different ways of placing parentheses
+            expressions = [
+                f"(({nums[0]} {ops[0]} {nums[1]}) {ops[1]} {nums[2]}) {ops[2]} {nums[3]}",
+                f"({nums[0]} {ops[0]} ({nums[1]} {ops[1]} {nums[2]})) {ops[2]} {nums[3]}",
+                f"{nums[0]} {ops[0]} (({nums[1]} {ops[1]} {nums[2]}) {ops[2]} {nums[3]})",
+                f"{nums[0]} {ops[0]} ({nums[1]} {ops[1]} ({nums[2]} {ops[2]} {nums[3]}))",
+                f"({nums[0]} {ops[0]} {nums[1]}) {ops[1]} ({nums[2]} {ops[2]} {nums[3]})"
+            ]
+            
+            for expr in expressions:
+                try:
+                    if abs(eval(expr) - target) < 1e-6:  # Check if result is 24
+                        return True
+                except ZeroDivisionError:
+                    continue
+    return False
 
 # Handling client connections
 def handle_client(conn, addr, player_name, game_data):

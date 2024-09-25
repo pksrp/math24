@@ -4,9 +4,56 @@ from tkinter import messagebox
 from Music import play_music
 import time
 from util import show_help  # Import the show_help function from the other file
+import operator
+from itertools import permutations, product
 
 client = None
 max_retries = 3  # Maximum number of retries for connection
+
+# Auto-solver function to find a solution for the given numbers
+def find_solution(problem, target=24):
+    if client is None:  # Check if the client is connected
+        messagebox.showerror("Connection Error", "You are not connected to the server. Please connect first.")
+        return
+    
+    ops = ['+', '-', '*', '/']
+    
+    for num_order in permutations(problem):
+        for op_order in product(ops, repeat=3):
+            expression = f"({num_order[0]} {op_order[0]} {num_order[1]}) {op_order[1]} {num_order[2]} {op_order[2]} {num_order[3]}"
+            try:
+                if eval(expression) == target:
+                    return expression
+            except ZeroDivisionError:
+                continue
+    return None
+
+# Hint function that gives the first operator as a hint
+def give_hint(problem):
+    if client is None:  # Check if the client is connected
+        messagebox.showerror("Connection Error", "You are not connected to the server. Please connect first.")
+        return
+    
+    solution = find_solution(problem)
+    if solution:
+        return f"Try using '{solution.split()[1]}' as the first operator"
+    return "No valid solution found."
+
+
+# Function to find and display the solution
+def show_solution():
+    if client is None:  # Check if the client is connected
+        messagebox.showerror("Connection Error", "You are not connected to the server. Please connect first.")
+        return
+    
+    problem = problem_label.cget("text").replace("Your numbers are: ", "").split(", ")
+    problem = [int(num) for num in problem]  # Convert string numbers to integers
+    
+    solution = find_solution(problem)
+    if solution:
+        messagebox.showinfo("Solution", f"Solution: {solution}")
+    else:
+        messagebox.showinfo("Solution", "No valid solution found.")
 
 def append_to_solution(value):
     """Append a value to the solution entry."""
@@ -102,13 +149,29 @@ def receive_problem():
         welcome_msg = client.recv(1024).decode()  # Receive the welcome message
         messagebox.showinfo("Welcome", welcome_msg)  # Display the welcome message
 
-        problem = client.recv(1024).decode()  # Now receive the numbers from the server
+        problem_str = client.recv(1024).decode()  # Now receive the numbers as a string from the server
+        problem = [int(num) for num in problem_str.split()]  # Convert string numbers to a list of integers
         problem_label.config(text=f"Your numbers are: {problem}")  # Update the problem label
         print(f"Received problem: {problem}")  # Debugging
+        
+        # Provide the solution and hint based on the received problem
+        solution = find_solution(problem)  # Pass the problem as a list of integers
+        hint = give_hint(problem)
+        print(f"Solution: {solution}, Hint: {hint}")  # Debugging
+        
+        # ปุ่ม Show Hint
+        hint_button = tk.Button(root, text="Show Hint", command=lambda: messagebox.showinfo("Hint", hint))
+        hint_button.pack()
+
+        # Show Solution button
+        solution_button = tk.Button(root, text="Show Solution", command=lambda: messagebox.showinfo("solution", find_solution(problem)))  # Pass the current problem
+        solution_button.pack()
+        
     except socket.timeout:
         messagebox.showerror("Timeout", "Connection timed out while receiving problem. Please try again.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to receive problem: {e}")
+
 
 def connect_to_server():
     global client
@@ -211,6 +274,8 @@ for button in buttons:
 # Submit button
 submit_button = tk.Button(root, text="Submit Solution", command=send_solution)
 submit_button.pack()
+
+
 
 # Help button
 help_button = tk.Button(root, text="Help", command=show_help)  # Add the Help button
