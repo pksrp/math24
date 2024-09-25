@@ -54,9 +54,9 @@ def show_solution():
         messagebox.showinfo("Solution", f"Solution: {solution}")
     else:
         messagebox.showinfo("Solution", "No valid solution found.")
-
+        
+# Append a value to the solution entry
 def append_to_solution(value):
-    """Append a value to the solution entry."""
     current_solution = solution_entry.get()
     # Check if the current solution is valid before appending
     if value in ['+', '-', '*', '/'] and (current_solution == '' or current_solution[-1] in ['+', '-', '*', '/']):
@@ -67,8 +67,8 @@ def append_to_solution(value):
     solution_entry.delete(0, tk.END)
     solution_entry.insert(0, current_solution + str(value))
 
+# Calculate the solution and check if it equals 24
 def calculate_solution():
-    """Calculate the solution and check if it equals 24."""
     solution = solution_entry.get()
     try:
         # Evaluate the expression and check if it equals 24
@@ -82,8 +82,8 @@ def calculate_solution():
         messagebox.showerror("Error", f"Invalid calculation: {e}")
         solution_entry.delete(0, tk.END)  # Clear on error
 
+#Show result (win/lose) and ask to play again or quit
 def show_result_and_options(result):
-    """Show result (win/lose) and ask to play again or quit."""
     result_window = tk.Toplevel(root)
     result_window.title("Game Result")
 
@@ -104,12 +104,14 @@ def show_result_and_options(result):
     quit_button = tk.Button(result_window, text="Quit", command=quit_game)
     quit_button.pack()
 
+# Resets the game for a new round
 def reset_game():
     """Resets the game for a new round."""
     problem_label.config(text="Waiting for a new problem...")
     solution_entry.delete(0, tk.END)
     connect_to_server()  # Reconnect for a new game
 
+# Show result (win/lose) and ask to play again or quit
 def send_solution():
     solution = solution_entry.get()
     
@@ -142,16 +144,16 @@ def send_solution():
         messagebox.showerror("Timeout", "Connection timed out while receiving play again prompt. Please try again.")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to receive play again prompt: {e}")
-
+        
+# Receives the welcome message and problem (numbers) from the server and displays it in the GUI
 def receive_problem():
-    """Receives the welcome message and problem (numbers) from the server and displays it in the GUI."""
     try:
         welcome_msg = client.recv(1024).decode()  # Receive the welcome message
         messagebox.showinfo("Welcome", welcome_msg)  # Display the welcome message
 
         problem_str = client.recv(1024).decode()  # Now receive the numbers as a string from the server
+        problem_label.config(text=f"Your numbers are: {problem_str}")  # Update the problem label
         problem = [int(num) for num in problem_str.split()]  # Convert string numbers to a list of integers
-        problem_label.config(text=f"Your numbers are: {problem}")  # Update the problem label
         print(f"Received problem: {problem}")  # Debugging
         
         # Provide the solution and hint based on the received problem
@@ -159,7 +161,7 @@ def receive_problem():
         hint = give_hint(problem)
         print(f"Solution: {solution}, Hint: {hint}")  # Debugging
         
-        # ปุ่ม Show Hint
+        # Show Hint button
         hint_button = tk.Button(root, text="Show Hint", command=lambda: messagebox.showinfo("Hint", hint))
         hint_button.pack()
 
@@ -172,7 +174,7 @@ def receive_problem():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to receive problem: {e}")
 
-
+# Establish a connection to the server and handle retries
 def connect_to_server():
     global client
     retry_count = 0
@@ -199,9 +201,9 @@ def connect_to_server():
             break
     else:
         messagebox.showerror("Error", "Failed to connect after multiple attempts. Please try again later.")
-            
+        
+# Request and display the player's score history from the server           
 def show_score_history():
-    """Request and display the player's score history from the server."""
     
     if client is None:  # Check if the client is connected
         messagebox.showerror("Connection Error", "You are not connected to the server. Please connect first.")
@@ -225,6 +227,11 @@ def show_score_history():
 # GUI setup
 root = tk.Tk()
 root.title("Game 24 Client")
+root.geometry("300x500")  # Increased height for better layout
+
+# Main Frame for UI components
+main_frame = tk.Frame(root)
+main_frame.pack(pady=10)
 
 # Play background music
 play_music()
@@ -233,7 +240,7 @@ play_music()
 name_label = tk.Label(root, text="Enter your name:")
 name_label.pack()
 name_entry = tk.Entry(root)
-name_entry.pack()
+name_entry.pack(pady=10)
 
 # Connect button
 connect_button = tk.Button(root, text="Connect", command=connect_to_server)
@@ -251,7 +258,7 @@ solution_entry.pack()
 
 # Create calculator buttons
 button_frame = tk.Frame(root)
-button_frame.pack()
+button_frame.pack(pady=10)
 
 buttons = [
     '1', '2', '3',
@@ -275,15 +282,13 @@ for button in buttons:
 submit_button = tk.Button(root, text="Submit Solution", command=send_solution)
 submit_button.pack()
 
-
-
-# Help button
-help_button = tk.Button(root, text="Help", command=show_help)  # Add the Help button
-help_button.pack()
-
 # Score History button
 score_history_button = tk.Button(root, text="Score History", command=show_score_history)
 score_history_button.pack()
+
+# Help button
+help_button = tk.Button(root, text="Help", command=show_help) 
+help_button.pack()
 
 # Start the GUI main loop
 root.mainloop()

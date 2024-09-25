@@ -7,9 +7,9 @@ import itertools
 from MathOperations import check_solution
 from util import log_activity
 from Database import update_score, init_db
-
-from MathOperations import strict_validate_solution  # Import the correct function
-
+# Import the function that checks if a solution is valid
+from MathOperations import strict_validate_solution  
+# Function to handle client connections
 def handle_client(conn, addr, player_name, game_data):
     conn.sendall(f"Welcome {player_name}!".encode())  # Send welcome message to the player
     
@@ -39,17 +39,25 @@ def handle_client(conn, addr, player_name, game_data):
             conn.sendall("Incorrect. Try again.".encode())
 
     conn.close()  # Close connection after game ends
-
-# Initialize the database
-init_db()
-
+# Retrieve the score history of a specific player from the database
 def get_score_history():
-    """Retrieve the score history of a specific player from the database."""
+    
+    # Connect to the SQLite database (game24.db)
     conn = sqlite3.connect('game24.db')
+    
+    # Create a cursor object to interact with the database
     c = conn.cursor()
-    c.execute("SELECT * FROM scores",)
+    
+    # Execute a SQL query to select all records from the 'scores' table
+    c.execute("SELECT * FROM scores")
+    
+    # Fetch all results from the executed query
     result = c.fetchall()
+    
+    # Close the database connection
     conn.close()
+    
+    # Return the fetched results
     return result
 
 # Function to generate 4 random numbers and ensure they have a valid solution
@@ -127,7 +135,8 @@ def handle_client(conn, addr, player_name, game_data):
             conn.close()
             break
     conn.close()
-
+    
+# Function to start the game
 def start_game(players, game_data):
     game_data['numbers'] = generate_numbers()
     game_data['winner'] = None
@@ -140,14 +149,16 @@ def start_game(players, game_data):
         # Instead of 'player1', use the actual player's name
         player_name = list(players.keys())[0]
         handle_client(players[player_name], None, player_name, game_data)
-
+        
+# Function to accept client connections
 def accept_connections(server):
     while True:
         conn, addr = server.accept()  # Accept new connection
         conn.settimeout(30)  # Set a timeout for the connection
         
         threading.Thread(target=client_thread, args=(conn, addr)).start()  # Start a new thread for each client
-
+        
+# Function for each client thread
 def client_thread(conn, addr):
     game_data = {'numbers': None, 'winner': None}
 
@@ -162,13 +173,16 @@ def client_thread(conn, addr):
 
     players = {player_name: conn}
 
-    # Start the game for single player mode
+    # Start the game 
     start_game(players, game_data)
 
 if __name__ == "__main__":
+    # Initialize the database
+    init_db()
+    # Start the server to accept connections
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(('127.0.0.1', 5555))  # This will allow connections from all network interfaces
     server.listen(5)  # Listen for up to 5 connections
     print("Server is running and waiting for connections...")
-
+    # Begin accepting client connections
     accept_connections(server)
