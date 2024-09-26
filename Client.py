@@ -6,6 +6,8 @@ import time
 from util import show_help  # Import the show_help function from the other file
 import operator
 from itertools import permutations, product
+from PIL import Image, ImageTk
+
 
 client = None
 max_retries = 3  # Maximum number of retries for connection
@@ -162,12 +164,12 @@ def receive_problem():
         print(f"Solution: {solution}, Hint: {hint}")  # Debugging
         
         # Show Hint button
-        hint_button = tk.Button(root, text="Show Hint", command=lambda: messagebox.showinfo("Hint", hint))
-        hint_button.pack()
+        hint_button = tk.Button(main_frame, text="Show Hint", bg="#cceeff", font=("Helvetica", 12), command=lambda: animate_button_click(connect_button) or messagebox.showinfo("Hint", hint))
+        hint_button.pack(pady=5)
 
         # Show Solution button
-        solution_button = tk.Button(root, text="Show Solution", command=lambda: messagebox.showinfo("solution", find_solution(problem)))  # Pass the current problem
-        solution_button.pack()
+        solution_button = tk.Button(main_frame, text="Show Solution", bg="#cceeff", font=("Helvetica", 12), command=lambda: animate_button_click(connect_button) or messagebox.showinfo("solution", find_solution(problem)))  # Pass the current problem
+        solution_button.pack(pady=5)
         
     except socket.timeout:
         messagebox.showerror("Timeout", "Connection timed out while receiving problem. Please try again.")
@@ -223,72 +225,96 @@ def show_score_history():
         score_text.pack()
     except Exception as e:
         messagebox.showerror("Error", f"Failed to retrieve score history: {e}")
+        
+# Animation: Change button color temporarily when clicked
+def animate_button_click(button):
+    original_color = button.cget("bg")
+    button.config(bg="yellow")  # Change to yellow on click
+    button.after(200, lambda: button.config(bg=original_color))  # Change back after 200ms
 
 # GUI setup
 root = tk.Tk()
 root.title("Game 24 Client")
-root.geometry("300x500")  # Increased height for better layout
+root.geometry("1000x650")  # Increased height for better layout
 
-# Main Frame for UI components
-main_frame = tk.Frame(root)
-main_frame.pack(pady=10)
+# Create a frame for the image on the left
+image_frame = tk.Frame(root)
+image_frame.pack(side=tk.LEFT)
 
-# Play background music
+# Load an image (make sure the image is in the same directory or provide the full path)
+image = tk.PhotoImage(file="moodeng.png")  # Replace with the correct image path
+image_label = tk.Label(image_frame, image=image, bg="#ffffff")
+image_label.pack()
+
+root.configure(bg="#f0f0f5")  # Light gray background
+
+main_frame = tk.Frame(root, bg="#ffffff", bd=5, relief="groove")  # Main frame with border
+main_frame.pack()
+
 play_music()
 
-# Player name input
-name_label = tk.Label(root, text="Enter your name:")
-name_label.pack()
-name_entry = tk.Entry(root)
-name_entry.pack(pady=10)
+# Player name input section
+name_label = tk.Label(main_frame, text="Enter your name:", font=("Helvetica", 12), bg="#ffffff")
+name_label.pack(pady=5)
+name_entry = tk.Entry(main_frame, font=("Helvetica", 12))
+name_entry.pack(pady=5)
 
 # Connect button
-connect_button = tk.Button(root, text="Connect", command=connect_to_server)
-connect_button.pack()
+connect_button = tk.Button(main_frame, text="Connect", bg="#cceeff", font=("Helvetica", 12), command=lambda: animate_button_click(connect_button) or connect_to_server())
+connect_button.pack(pady=5)
 
-# Problem display
-problem_label = tk.Label(root, text="You will see the numbers here once connected...")
-problem_label.pack()
+# Problem display section
+problem_label = tk.Label(main_frame, text="You will see the numbers here once connected...", font=("Helvetica", 10), bg="#ffffe6", width=40, height=2)
+problem_label.pack(pady=5)
 
-# Solution input
-solution_label = tk.Label(root, text="Enter your solution:")
-solution_label.pack()
-solution_entry = tk.Entry(root)
-solution_entry.pack()
+# Solution input section
+solution_label = tk.Label(main_frame, text="Enter your solution:", font=("Helvetica", 12), bg="#ffffff")
+solution_label.pack(pady=5)
+solution_entry = tk.Entry(main_frame, font=("Helvetica", 12))
+solution_entry.pack(pady=5)
 
-# Create calculator buttons
-button_frame = tk.Frame(root)
-button_frame.pack(pady=10)
+# Frame for calculator buttons
+button_frame = tk.Frame(main_frame, bg="#ffffff")
+button_frame.pack(pady=5)
 
 buttons = [
     '1', '2', '3',
     '4', '5', '6',
     '7', '8', '9',
-    '+', '-', '*', '/','(',')',
-    'C', '='
+    '+', '-', '*', '/', '(', ')',
+    'C'
 ]
 
+button_colors = {
+    '1': '#ffcccc', '2': '#ffb3b3', '3': '#ff9999',
+    '4': '#ff8080', '5': '#ff6666', '6': '#ff4d4d',
+    '7': '#ff3333', '8': '#ff1a1a', '9': '#ff0000',
+    '+': '#e6ffe6', '-': '#ccffcc', '*': '#b3ffb3', '/': '#99ff99',
+    '(': '#80ff80', ')': '#66ff66', 'C': '#ccf2ff'
+}
+
 for button in buttons:
+    btn = tk.Button(button_frame, text=button, font=("Helvetica", 12), bg=button_colors[button], width=5, height=2)
     if button == '=':
-        btn = tk.Button(button_frame, text=button, command=calculate_solution)
+        btn.config(command=lambda: animate_button_click(btn) or calculate_solution())
     elif button == 'C':
-        btn = tk.Button(button_frame, text=button, command=lambda: solution_entry.delete(0, tk.END))
+        btn.config(command=lambda: animate_button_click(btn) or solution_entry.delete(0, tk.END))
     else:
-        btn = tk.Button(button_frame, text=button, command=lambda b=button: append_to_solution(b))
+        btn.config(command=lambda b=button: animate_button_click(btn) or append_to_solution(b))
     
-    btn.grid(row=buttons.index(button) // 3, column=buttons.index(button) % 3)
+    btn.grid(row=buttons.index(button) // 4, column=buttons.index(button) % 4, padx=5, pady=5)
 
 # Submit button
-submit_button = tk.Button(root, text="Submit Solution", command=send_solution)
-submit_button.pack()
+submit_button = tk.Button(main_frame, text="Submit Solution", bg="#ccff99", font=("Helvetica", 12), command=lambda: animate_button_click(submit_button) or send_solution())
+submit_button.pack(pady=5)
 
 # Score History button
-score_history_button = tk.Button(root, text="Score History", command=show_score_history)
-score_history_button.pack()
+score_history_button = tk.Button(main_frame, text="Score History", bg="#ccff99", font=("Helvetica", 12), command=lambda: animate_button_click(score_history_button) or show_score_history())
+score_history_button.pack(pady=5)
 
 # Help button
-help_button = tk.Button(root, text="Help", command=show_help) 
-help_button.pack()
+help_button = tk.Button(main_frame, text="Help", bg="#ccff99", font=("Helvetica", 12), command=lambda: animate_button_click(help_button) or show_help()) 
+help_button.pack(pady=5)
 
 # Start the GUI main loop
 root.mainloop()

@@ -87,7 +87,7 @@ def strict_validate_solution(numbers):
             
             for expr in expressions:
                 try:
-                    if abs(eval(expr) - target) == 1e-6:  # Check if result is 24
+                    if eval(expr) == target:
                         return True
                 except ZeroDivisionError:
                     continue
