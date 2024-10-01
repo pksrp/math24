@@ -97,7 +97,8 @@ def show_result_and_options(result):
         reset_game()
 
     def quit_game():
-        client.close()
+        if client:
+            client.close()
         root.destroy()
 
     play_again_button = tk.Button(result_window, text="Play Again", command=play_again)
@@ -201,8 +202,8 @@ def connect_to_server():
         except Exception as e:
             messagebox.showerror("Connection Error", f"Failed to connect to server: {e}")
             break
-    else:
-        messagebox.showerror("Error", "Failed to connect after multiple attempts. Please try again later.")
+    if retry_count == max_retries:
+        messagebox.showerror("Error", "Failed to connect after multiple attempts.")
         
 # Request and display the player's score history from the server           
 def show_score_history():
