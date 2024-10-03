@@ -8,7 +8,7 @@ import operator
 from itertools import permutations, product
 from PIL import Image, ImageTk
 
-
+server_ip =''
 client = None
 max_retries = 3  # Maximum number of retries for connection
 
@@ -185,7 +185,7 @@ def connect_to_server():
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.settimeout(30)  # Set longer timeout for the connection
-            client.connect(('127.0.0.1', 5555))  # Ensure IP matches your server
+            client.connect((server_ip, 5555))  # Ensure IP matches your server
             name = name_entry.get()
             client.send(name.encode())  # Send player name to server
             print(f"Player name sent: {name}")  # Debugging

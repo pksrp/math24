@@ -9,6 +9,9 @@ from util import log_activity
 from Database import update_score, init_db
 # Import the function that checks if a solution is valid
 from MathOperations import strict_validate_solution  
+
+server_ip =''
+
 # Function to handle client connections
 def handle_client(conn, addr, player_name, game_data):
     conn.sendall(f"Welcome {player_name}!".encode())  # Send welcome message to the player
@@ -181,7 +184,7 @@ if __name__ == "__main__":
     init_db()
     # Start the server to accept connections
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('127.0.0.1', 5555))  # This will allow connections from all network interfaces
+    server.bind((server_ip, 5555))  # This will allow connections from all network interfaces
     server.listen(5)  # Listen for up to 5 connections
     print("Server is running and waiting for connections...")
     # Begin accepting client connections
