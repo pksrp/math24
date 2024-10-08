@@ -8,7 +8,7 @@ import operator
 from itertools import permutations, product
 from PIL import Image, ImageTk
 
-server_ip =''
+server_ip ='172.20.10.6'
 client = None
 max_retries = 3  # Maximum number of retries for connection
 
@@ -181,6 +181,7 @@ def receive_problem():
 def connect_to_server():
     global client
     retry_count = 0
+    port = 5555
     while retry_count < max_retries:
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
