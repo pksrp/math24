@@ -8,7 +8,7 @@ import operator
 from itertools import permutations, product
 from PIL import Image, ImageTk
 
-server_ip =''
+server_ip ='172.20.10.6'
 client = None
 max_retries = 3  # Maximum number of retries for connection
 
@@ -89,8 +89,18 @@ def show_result_and_options(result):
     result_window = tk.Toplevel(root)
     result_window.title("Game Result")
 
-    result_label = tk.Label(result_window, text=result)
-    result_label.pack()
+    # จัดตำแหน่งหน้าต่างให้อยู่กลาง
+    window_width = 400
+    window_height = 150
+    screen_width = result_window.winfo_screenwidth()
+    screen_height = result_window.winfo_screenheight()
+    x = (screen_width // 2) - (window_width // 2)
+    y = (screen_height // 2) - (window_height // 2)
+    result_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+    # ใช้ฟอนต์ขนาดใหญ่สำหรับผลลัพธ์
+    result_label = tk.Label(result_window, text=result, font=("Helvetica", 16), fg="green")
+    result_label.pack(pady=20)
 
     def play_again():
         result_window.destroy()
@@ -101,11 +111,11 @@ def show_result_and_options(result):
             client.close()
         root.destroy()
 
-    play_again_button = tk.Button(result_window, text="Play Again", command=play_again)
-    play_again_button.pack()
+    play_again_button = tk.Button(result_window, text="Play Again", bg="#ccff99", font=("Helvetica", 12), command=play_again)
+    play_again_button.pack(pady=5)
 
-    quit_button = tk.Button(result_window, text="Quit", command=quit_game)
-    quit_button.pack()
+    quit_button = tk.Button(result_window, text="Quit", bg="#ccff99", font=("Helvetica", 12), command=quit_game)
+    quit_button.pack(pady=5)
 
 # Resets the game for a new round
 def reset_game():
@@ -181,6 +191,7 @@ def receive_problem():
 def connect_to_server():
     global client
     retry_count = 0
+    port = 5555
     while retry_count < max_retries:
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -287,11 +298,11 @@ buttons = [
 ]
 
 button_colors = {
-    '1': '#ffcccc', '2': '#ffb3b3', '3': '#ff9999',
-    '4': '#ff8080', '5': '#ff6666', '6': '#ff4d4d',
-    '7': '#ff3333', '8': '#ff1a1a', '9': '#ff0000',
-    '+': '#e6ffe6', '-': '#ccffcc', '*': '#b3ffb3', '/': '#99ff99',
-    '(': '#80ff80', ')': '#66ff66', 'C': '#ccf2ff'
+    '1': '#ff9700', '2': '#ff9700', '3': '#ff9700',
+    '4': '#ff9700', '5': '#ff9700', '6': '#ff9700',
+    '7': '#ff9700', '8': '#ff9700', '9': '#ff9700',
+    '+': '#ff9700', '-': '#ff9700', '*': '#ff9700', '/': '#ff9700',
+    '(': '#ff9700', ')': '#ff9700', 'C': '#ff9700'
 }
 
 for button in buttons:
@@ -306,15 +317,15 @@ for button in buttons:
     btn.grid(row=buttons.index(button) // 4, column=buttons.index(button) % 4, padx=5, pady=5)
 
 # Submit button
-submit_button = tk.Button(main_frame, text="Submit Solution", bg="#ccff99", font=("Helvetica", 12), command=lambda: animate_button_click(submit_button) or send_solution())
+submit_button = tk.Button(main_frame, text="Submit Solution", bg="#f7e39c", font=("Helvetica", 12), command=lambda: animate_button_click(submit_button) or send_solution())
 submit_button.pack(pady=5)
 
 # Score History button
-score_history_button = tk.Button(main_frame, text="Score History", bg="#ccff99", font=("Helvetica", 12), command=lambda: animate_button_click(score_history_button) or show_score_history())
+score_history_button = tk.Button(main_frame, text="Score History", bg="#f7e39c", font=("Helvetica", 12), command=lambda: animate_button_click(score_history_button) or show_score_history())
 score_history_button.pack(pady=5)
 
 # Help button
-help_button = tk.Button(main_frame, text="Help", bg="#ccff99", font=("Helvetica", 12), command=lambda: animate_button_click(help_button) or show_help()) 
+help_button = tk.Button(main_frame, text="Help", bg="#f7e39c", font=("Helvetica", 12), command=lambda: animate_button_click(help_button) or show_help()) 
 help_button.pack(pady=5)
 
 # Start the GUI main loop
